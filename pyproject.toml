@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "pipeline-forge"
+version = "1.0.0"
+description = "A go-to toolkit for crafting robust and flexible data pre-processing pipelines in Python."
+authors = ["Tom <tomrfreeman3@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+mlflow = "^2.6.0"
+sklearn = "imblearn"
+
+[tool.poetry.group.dev.dependencies]
+imblearn = "^0.0"
+pandas = "^2.1.0"
+numpy = "^1.25.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
