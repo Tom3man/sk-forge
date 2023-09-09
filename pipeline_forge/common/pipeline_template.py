@@ -212,7 +212,10 @@ class FeaturePipelineBuilder(ResamplingPipeline, FeatureEngineeringPipeline, ABC
             fit_transformed = self.full_pipeline.named_steps['feature'].fit_transform(X, y)
 
         percentage_decrease = ((starting_df_cols - len(fit_transformed.columns)) / starting_df_cols)
-        mlflow.set_tag("feature_decrease_perc", f"{percentage_decrease * 100:.2f}%")
+
+        if mlflow.active_run():
+            mlflow.set_tag("feature_decrease_perc", f"{percentage_decrease * 100:.2f}%")
+
         return fit_transformed
 
     def fit_features(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.Series]) -> pd.DataFrame:
@@ -249,7 +252,9 @@ class FeaturePipelineBuilder(ResamplingPipeline, FeatureEngineeringPipeline, ABC
         Returns:
             Tuple[np.ndarray, np.ndarray]: Resampled data and corresponding labels.
         """
-        mlflow.set_tag("imbalance_target_change_perc", None)
+        if mlflow.active_run():
+            mlflow.set_tag("imbalance_target_change_perc", None)
+
         if not len(self.imbalanced_steps) > 0:
             log.info("Not enough arguments have been passed to create a sampling Pipeline")
             return X, y
@@ -258,5 +263,8 @@ class FeaturePipelineBuilder(ResamplingPipeline, FeatureEngineeringPipeline, ABC
         X_resampled, y_resampled = self.full_pipeline.named_steps['sampling'].fit_resample(X, y)
         resampled_target_true = len([i for i in y_resampled if i == 1])
         target_perc_change = ((resampled_target_true - starting_target_true) / starting_target_true) * 100
-        mlflow.set_tag("imbalance_target_change_perc", target_perc_change)
+
+        if mlflow.active_run():
+            mlflow.set_tag("imbalance_target_change_perc", target_perc_change)
+
         return X_resampled, y_resampled

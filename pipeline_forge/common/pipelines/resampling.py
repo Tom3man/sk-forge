@@ -107,7 +107,8 @@ class ResamplingPipeline(ABC):
             raise AssertionError("We recommend using only one oversampling technique.")
 
         # Start by logging no oversampling and then overwrite with the correct technique if used
-        mlflow.set_tag("oversampling", None)
+        if mlflow.active_run():
+            mlflow.set_tag("oversampling", None)
 
         # Build over sampling pipeline
         if self.USE_RANDOM_OVERSAMPLING:
@@ -116,8 +117,9 @@ class ResamplingPipeline(ABC):
                     sampling_strategy=self.RANDOM_OVERSAMPLING_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "oversampling", f"random_over_sampling - {self.RANDOM_OVERSAMPLING_PARAMETERS['sampling_strategy']}")
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "oversampling", f"random_over_sampling - {self.RANDOM_OVERSAMPLING_PARAMETERS['sampling_strategy']}")
 
         elif self.USE_SMOTE and self.SMOTE_PARAMETERS:
             self.add_imbalanced_step(
@@ -125,8 +127,9 @@ class ResamplingPipeline(ABC):
                     **self.SMOTE_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "oversampling", f"smote_over_sampling - {self.SMOTE_PARAMETERS['sampling_strategy']}")
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "oversampling", f"smote_over_sampling - {self.SMOTE_PARAMETERS['sampling_strategy']}")
 
         elif self.USE_ADASYN and self.ADASYN_PARAMETERS:
             self.add_imbalanced_step(
@@ -134,8 +137,9 @@ class ResamplingPipeline(ABC):
                     **self.ADASYN_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "oversampling", f"adasyn_over_sampling - {self.ADASYN_PARAMETERS['sampling_strategy']}")
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "oversampling", f"adasyn_over_sampling - {self.ADASYN_PARAMETERS['sampling_strategy']}")
 
         elif self.USE_BORDERLINE_SMOTE and self.BORDERLINE_SMOTE_PARAMETERS:
             self.add_imbalanced_step(
@@ -143,8 +147,10 @@ class ResamplingPipeline(ABC):
                     **self.BORDERLINE_SMOTE_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "oversampling", f"borderline_smote_over_sampling - {self.BORDERLINE_SMOTE_PARAMETERS['sampling_strategy']}")
+
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "oversampling", f"borderline_smote_over_sampling - {self.BORDERLINE_SMOTE_PARAMETERS['sampling_strategy']}")
 
     def _assemble_undersampling_pipeline(self):
         """
@@ -172,8 +178,8 @@ class ResamplingPipeline(ABC):
         ]) > 1:
             raise AssertionError("We recommend using only one undersampling technique.")
 
-        # Start by logging no undersampling and then overwrite with the correct technique if used
-        mlflow.set_tag("undersampling", None)
+        if mlflow.active_run():
+            mlflow.set_tag("undersampling", None)
 
         # Build under sampling pipeline
         if self.USE_RANDOM_UNDERSAMPLING and self.RANDOM_UNDERSAMPLING_PARAMETERS:
@@ -182,8 +188,10 @@ class ResamplingPipeline(ABC):
                     **self.RANDOM_UNDERSAMPLING_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "undersampling", f"random_undersampling - {self.RANDOM_UNDERSAMPLING_PARAMETERS['sampling_strategy']}")
+
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "undersampling", f"random_undersampling - {self.RANDOM_UNDERSAMPLING_PARAMETERS['sampling_strategy']}")
 
         elif self.USE_CLUSTER_CENTROIDS and self.CLUSTER_CENTROIDS_PARAMETERS:
             self.add_imbalanced_step(
@@ -191,8 +199,10 @@ class ResamplingPipeline(ABC):
                     **self.CLUSTER_CENTROIDS_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "undersampling", f"cluster_centroids - {self.CLUSTER_CENTROIDS_PARAMETERS['sampling_strategy']}")
+
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "undersampling", f"cluster_centroids - {self.CLUSTER_CENTROIDS_PARAMETERS['sampling_strategy']}")
 
         elif self.USE_TOMEK_LINKS and self.TOMEK_LINKS_PARAMETERS:
             self.add_imbalanced_step(
@@ -200,7 +210,9 @@ class ResamplingPipeline(ABC):
                     **self.TOMEK_LINKS_PARAMETERS
                 )
             )
-            mlflow.set_tag("undersampling", "tomek_links")
+
+            if mlflow.active_run():
+                mlflow.set_tag("undersampling", "tomek_links")
 
         elif self.USE_ENN and self.ENN_PARAMETERS:
             self.add_imbalanced_step(
@@ -208,8 +220,10 @@ class ResamplingPipeline(ABC):
                     **self.ENN_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "undersampling", f"enn - {self.ENN_PARAMETERS['sampling_strategy']}")
+
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "undersampling", f"enn - {self.ENN_PARAMETERS['sampling_strategy']}")
 
         elif self.USE_NEAR_MISS and self.NEAR_MISS_PARAMETERS:
             self.add_imbalanced_step(
@@ -217,5 +231,7 @@ class ResamplingPipeline(ABC):
                     **self.NEAR_MISS_PARAMETERS
                 )
             )
-            mlflow.set_tag(
-                "undersampling", f"near_miss - {self.NEAR_MISS_PARAMETERS['sampling_strategy']}")
+
+            if mlflow.active_run():
+                mlflow.set_tag(
+                    "undersampling", f"near_miss - {self.NEAR_MISS_PARAMETERS['sampling_strategy']}")

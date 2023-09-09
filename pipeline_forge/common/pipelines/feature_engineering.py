@@ -144,32 +144,43 @@ class FeatureEngineeringPipeline(ABC):
             )
 
         # Start by logging no scaler and then overwrite with the correct technique if used
-        mlflow.set_tag("scaler", None)
+        if mlflow.active_run():
+            mlflow.set_tag("scaler", None)
+
         if self.SCALER_TYPE:
             self.add_engineering_step("scaler", FeatureScalerTransformer(scaler_type=self.SCALER_TYPE))
-            mlflow.set_tag("scaler", self.SCALER_TYPE)
+
+            if mlflow.active_run():
+                mlflow.set_tag("scaler", self.SCALER_TYPE)
 
         # Start by logging no correlation feature drop and then overwrite with the correct technique if used
-        mlflow.set_tag("feature_correlation_drop", None)
+        if mlflow.active_run():
+            mlflow.set_tag("feature_correlation_drop", None)
+
         if self.CORRELATION_DROP_TH:
             self.add_engineering_step(
                 "feature_correlation_drop", CorrelationFeatureDrop(
                     correlation_drop_th=self.CORRELATION_DROP_TH,
                     random_seed=self.RANDOM_SEED))
-            mlflow.set_tag("feature_correlation_drop", self.CORRELATION_DROP_TH)
+
+            if mlflow.active_run():
+                mlflow.set_tag("feature_correlation_drop", self.CORRELATION_DROP_TH)
 
         # Start by logging no tree-based feature selection and then overwrite with the correct technique if used
-        mlflow.set_tag("tree_based_fs", None)
+        if mlflow.active_run():
+            mlflow.set_tag("tree_based_fs", None)
         if self.DT_IMPORTANCE_TH and not self.SELECT_COLS:
             self.add_engineering_step(
                 "decision_tree_feature_selection", DecisionTreesFeatureSelector(
                     dt_importance_th=self.DT_IMPORTANCE_TH,
                     random_seed=self.RANDOM_SEED))
-            mlflow.set_tag("tree_based_fs", f"decision_tree: {self.DT_IMPORTANCE_TH}")
+            if mlflow.active_run():
+                mlflow.set_tag("tree_based_fs", f"decision_tree: {self.DT_IMPORTANCE_TH}")
 
         if self.RF_IMPORTANCE_TH and not self.SELECT_COLS:
             self.add_engineering_step(
                 "random_forest_feature_selection", RandomForestFeatureSelector(
                     rf_importance_th=self.RF_IMPORTANCE_TH,
                     random_seed=self.RANDOM_SEED))
-            mlflow.set_tag("tree_based_fs", f"random_forest: {self.RF_IMPORTANCE_TH}")
+            if mlflow.active_run():
+                mlflow.set_tag("tree_based_fs", f"random_forest: {self.RF_IMPORTANCE_TH}")
