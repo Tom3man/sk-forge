@@ -62,21 +62,29 @@ class ProphetFeatureGenerator(BaseEstimator, TransformerMixin):
 class DateTimeEncoder(BaseEstimator, TransformerMixin):
     """
     Transformer that encodes date and time columns into separate components and adds them as features.
-    THis transformer assumes there is a 'Date' column.
+    This transformer assumes there is a 'Date' column.
     """
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
+        # Check if 'Date' and 'Time' columns are not in datetime format and convert them if needed
+        if not pd.api.types.is_datetime64_any_dtype(X['Date']):
+            X['Date'] = pd.to_datetime(X['Date'], errors='coerce')
+
+        if 'Time' in X.columns and not pd.api.types.is_datetime64_any_dtype(X['Time']):
+            X['Time'] = pd.to_datetime(X['Time'], errors='coerce')
+
         # Extract date components
         X['YEAR'] = X['Date'].dt.year
         X['MONTH'] = X['Date'].dt.month
         X['DAY'] = X['Date'].dt.day
         X['DAY_OF_WEEK'] = X['Date'].dt.dayofweek
 
-        # Extract time components
-        X['HOUR'] = X['Time'].dt.hour
-        X['MINUTE'] = X['Time'].dt.minute
+        # Extract time components if 'Time' column exists
+        if 'Time' in X.columns:
+            X['HOUR'] = X['Time'].dt.hour
+            X['MINUTE'] = X['Time'].dt.minute
 
         return X

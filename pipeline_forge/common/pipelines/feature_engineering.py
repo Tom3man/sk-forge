@@ -100,9 +100,6 @@ class FeatureEngineeringPipeline(ABC):
         if self.UNIQUE_FIELDS:
             self.add_engineering_step("drop_unique_fields", ColumnDropTransformer(drop_cols=self.UNIQUE_FIELDS))
 
-        if self.DROP_COLS:
-            self.add_engineering_step("drop_columns", ColumnDropTransformer(drop_cols=self.DROP_COLS))
-
         if self.SELECT_COLS:
             self.add_engineering_step("select_columns", FeatureSelector(select_cols=self.SELECT_COLS))
 
@@ -142,6 +139,9 @@ class FeatureEngineeringPipeline(ABC):
             self.add_engineering_step(
                 "prophet", ProphetFeatureGenerator()
             )
+
+        if self.DROP_COLS:
+            self.add_engineering_step("drop_columns", ColumnDropTransformer(drop_cols=self.DROP_COLS))
 
         # Start by logging no scaler and then overwrite with the correct technique if used
         if mlflow.active_run():
