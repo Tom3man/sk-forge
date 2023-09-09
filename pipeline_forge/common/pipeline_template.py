@@ -71,6 +71,12 @@ class FeaturePipelineBuilder(ResamplingPipeline, FeatureEngineeringPipeline, ABC
     # Lost of columns to create dummy columns with
     CAT_ONE_HOT_COLS: List[str] = None
 
+    # Add Date column encoder
+    ENCODE_DATE: bool = False
+
+    # Create prophet generated features
+    USE_PROPHET: bool = False
+
     # Correlation feature drop transformer
     # Correlation threshold used to drop features
     CORRELATION_DROP_TH: float = None
