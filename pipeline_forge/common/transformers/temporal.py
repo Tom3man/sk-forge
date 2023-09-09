@@ -69,10 +69,11 @@ class DateTimeEncoder(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
-        # Check if 'Date' and 'Time' columns are not in datetime format and convert them if needed
+        # Check if 'Date' column is not in datetime format and convert it if needed
         if not pd.api.types.is_datetime64_any_dtype(X['Date']):
             X['Date'] = pd.to_datetime(X['Date'], errors='coerce')
 
+        # Check if 'Time' column exists and is not in datetime format; convert it if needed
         if 'Time' in X.columns and not pd.api.types.is_datetime64_any_dtype(X['Time']):
             X['Time'] = pd.to_datetime(X['Time'], errors='coerce')
 
@@ -88,3 +89,4 @@ class DateTimeEncoder(BaseEstimator, TransformerMixin):
             X['MINUTE'] = X['Time'].dt.minute
 
         return X
+
