@@ -6,6 +6,7 @@ from .scalers import FeatureScalerTransformer
 from .selectors import (ColumnDropTransformer, CorrelationFeatureDrop,
                         DecisionTreesFeatureSelector, FeatureSelector,
                         RandomForestFeatureSelector)
+from .temporal import DateTimeEncoder, ProphetFeatureGenerator
 
 __all__ = [
     DataframeMemoryReducer,
@@ -21,4 +22,6 @@ __all__ = [
     DecisionTreesFeatureSelector,
     FeatureSelector,
     RandomForestFeatureSelector,
+    DateTimeEncoder,
+    ProphetFeatureGenerator,
 ]

@@ -7,9 +7,9 @@ from sklearn.pipeline import Pipeline
 from pipeline_forge.common.transformers import (
     CategoricalNonOrdinalTransformer, CategoricalNormTransformer,
     ColumnDropTransformer, CorrelationFeatureDrop, DataframeMemoryReducer,
-    DecisionTreesFeatureSelector, FeatureScalerTransformer, FeatureSelector,
-    FillNullsTransformer, RandomForestFeatureSelector,
-    SimpleImputerTransformer, WoETransformer)
+    DateTimeEncoder, DecisionTreesFeatureSelector, FeatureScalerTransformer,
+    FeatureSelector, FillNullsTransformer, ProphetFeatureGenerator,
+    RandomForestFeatureSelector, SimpleImputerTransformer, WoETransformer)
 
 
 class FeatureEngineeringPipeline(ABC):
@@ -61,6 +61,12 @@ class FeatureEngineeringPipeline(ABC):
 
     # Feature selection using a random forest
     RF_IMPORTANCE_TH: float = None
+
+    # Add Date column encoder
+    ENCODE_DATE: bool = False
+
+    # Create prophet generated features
+    USE_PROPHET: bool = False
 
     # Reduce memory transformer
     REDUCE_DF_MEM: bool = False
@@ -126,6 +132,16 @@ class FeatureEngineeringPipeline(ABC):
             self.add_engineering_step(
                 "one_hot_encode", CategoricalNonOrdinalTransformer(
                     non_ordinal_categorical_cols=self.CAT_ONE_HOT_COLS))
+
+        if self.ENCODE_DATE:
+            self.add_engineering_step(
+                "date_encoder", DateTimeEncoder()
+            )
+
+        if self.USE_PROPHET:
+            self.add_engineering_step(
+                "prophet", ProphetFeatureGenerator()
+            )
 
         # Start by logging no scaler and then overwrite with the correct technique if used
         mlflow.set_tag("scaler", None)
