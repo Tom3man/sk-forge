@@ -19,7 +19,7 @@ class DecisionTreesFeatureSelector(BaseEstimator, TransformerMixin):
     a model to the data. In order for this to work, the model should be quite overfitted.
 
     Args:
-        dt_importance_th (float):
+        importance_th (float):
             Threshold that represents the percentage of explained importance that wants to be captured with the features.
         random_seed (int):
             Random seed for reproducibility.
@@ -29,11 +29,11 @@ class DecisionTreesFeatureSelector(BaseEstimator, TransformerMixin):
 
     def __init__(
             self,
-            dt_importance_th: float,
+            importance_th: float,
             random_seed: int = None,
             model_type: str = 'dt'
     ):
-        self.dt_importance_th = dt_importance_th
+        self.importance_th = importance_th
         self.random_seed = random_seed
 
         if model_type not in self.tree_models.keys():
@@ -115,7 +115,7 @@ class DecisionTreesFeatureSelector(BaseEstimator, TransformerMixin):
         importance_df = importance_df.sort_values('importance', ascending=False)
         importance_df['cumulative_importance'] = importance_df.importance.cumsum()
 
-        selected_features_df = importance_df[importance_df.cumulative_importance < self.dt_importance_th]
+        selected_features_df = importance_df[importance_df.cumulative_importance < self.importance_th]
         return selected_features_df.features.values, selected_features_df.importance.values
 
     def fit(self, X: pd.DataFrame, y):
@@ -167,9 +167,9 @@ class RandomForestFeatureSelector(DecisionTreesFeatureSelector):
     """
     The Random Forest implementation of a tree based selector transformer.
     """
-    def __init__(self, rf_importance_th: float, random_seed: int = None):
+    def __init__(self, importance_th: float, random_seed: int = None):
         super().__init__(
-            dt_importance_th=rf_importance_th,
+            importance_th=importance_th,
             random_seed=random_seed,
             model_type='rf'
         )

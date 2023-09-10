@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import mlflow
 import numpy as np
@@ -26,129 +26,11 @@ class FeatureEngineeringTransformer(BaseEstimator, TransformerMixin):
         return self.feature_pipeline.transform(X)
 
 
-class FeaturePipelineBuilder(ResamplingPipeline, FeatureEngineeringPipeline, ABC):
+class FeaturePipelineBuilder(FeatureEngineeringPipeline, ResamplingPipeline, ABC):
 
-    # Target column
-    TARGET_COL: str = None
-
-    RANDOM_SEED: int = 1995
-
-    # List of unique identifier columns for the drop columns transformer
-    UNIQUE_FIELDS: List[str] = None
-
-    # List of columns to drop for the drop columns transformer
-    DROP_COLS: List[str] = None
-
-    # List of columns used for direct feature selector
-    SELECT_COLS: List[str] = None
-
-    # The type of scaler to use for the scaler transformer
-    # Can be one of 'standard', 'min_max', 'robust' or 'max_absolute'
-    SCALER_TYPE: str = None
-
-    # Dictionary where the keys are columns and values are fills
-    # Used to fill NA values, used by the fill null transformer
-    FILL_NA_DICT: Dict[str, Any] = None
-
-    # WOE transformer
-    CATEGORICAL_COLS_WOE: List[str] = None
-
-    # List of columns to impute, used by the mean imputer transformer
-    MEAN_IMPUTATION_NA_LIST: List[str] = None
-    # Stratgy used by the mean imputer transformer
-    # Can be either "mean", "median", "most_frequent" or "constant"
-    MEAN_IMPUTATION_STRATEGY: str = None
-
-    # Used by the categorical normaliser transformer
-    # List of categorical variables to be used as reference
-    CAT_NORM_CAT_FEATURES: List[str] = None
-    # List of numerical variables to be transformed
-    CAT_NORM_NUM_FEATURES: List[str] = None
-    # List of aliases to append each transformed numerical column
-    CAT_NORM_ALIASES: List[str] = None
-
-    # One-hot encode transformer
-    # Lost of columns to create dummy columns with
-    CAT_ONE_HOT_COLS: List[str] = None
-
-    # Add Date column encoder
-    ENCODE_DATE: bool = False
-
-    # Create prophet generated features
-    USE_PROPHET: bool = False
-
-    # Correlation feature drop transformer
-    # Correlation threshold used to drop features
-    CORRELATION_DROP_TH: float = None
-
-    # Feature selection using a decision tree
-    DT_IMPORTANCE_TH: float = None
-
-    # Feature selection using a random forest
-    RF_IMPORTANCE_TH: float = None
-
-    # Over sampling
-    # Use random over sampling
-    RANDOM_OVERSAMPLE: float = None
-
-    # SMOTE parameters
-    USE_SMOTE: bool = False
-    SMOTE_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'k_neighbors': 5,
-        'sampling_strategy': 0.5,
-        'kind': 'danger',
-    }
-
-    # ADASYN parameters
-    USE_ADASYN: bool = False
-    ADASYN_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'n_neighbors': 5,
-        'sampling_strategy': 'auto',
-    }
-
-    # Borderline-SMOTE parameters
-    USE_BORDERLINE_SMOTE: bool = False
-    BORDERLINE_SMOTE_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 0.5,
-        'kind': 'borderline-1',
-        'k_neighbors': 5,
-    }
-
-    # Under sampling
-    # Random Undersampling parameters
-    USE_RANDOM_UNDERSAMPLING: bool = False
-    RANDOM_UNDERSAMPLING_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 0.5,
-    }
-
-    # Cluster Centroids parameters
-    USE_CLUSTER_CENTROIDS: bool = False
-    CLUSTER_CENTROIDS_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 'auto',
-    }
-
-    # Tomek Links parameters
-    USE_TOMEK_LINKS: bool = False
-    TOMEK_LINKS_PARAMETERS: Dict[str, Union[str, int, float]] = {}
-
-    # ENN parameters
-    USE_ENN: bool = False
-    ENN_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 'auto',
-    }
-
-    # NearMiss parameters
-    USE_NEAR_MISS: bool = False
-    NEAR_MISS_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 'auto',
-        'version': 1,
-    }
-
-    # Reduce memory transformer
-    REDUCE_DF_MEM: bool = False
-
-    def __init__(self):
-        super().__init__()
+    def __init__(self, target_col: str, random_seed: Optional[int] = 1995):
+        self.target_col = target_col
+        super().__init__(target_col=target_col)
 
     def build_pipeline(self) -> Pipeline:
         """
@@ -157,10 +39,9 @@ class FeaturePipelineBuilder(ResamplingPipeline, FeatureEngineeringPipeline, ABC
         Returns:
             Pipeline: Constructed Pipeline instance.
         """
-        self._build_feature_engineering_pipeline()
+        self.build_feature_engineering_steps()
 
-        self._assemble_undersampling_pipeline()
-        self._assemble_oversampling_pipeline()
+        self.build_sampling_steps()
 
         if not len(self.engineering_steps) > 0:
             raise ValueError("Not enough arguments have been passed to create a Pipeline")

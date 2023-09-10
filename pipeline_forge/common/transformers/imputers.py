@@ -20,15 +20,15 @@ class SimpleImputerTransformer(BaseEstimator, TransformerMixin):
         columns (List[str]): list of columns with null values to impute
         strategy: way to impute the missing values. Refer to SimpleImputer for more details
     """
-    def __init__(self, columns: List[str], **simple_imputer_kwargs):
+    def __init__(self, columns: List[str], imputer_strategy: str):
         self.columns = columns
-        self.imputer_strategy = simple_imputer_kwargs.get('strategy')
+        self.imputer_strategy = imputer_strategy
 
         self.imputer_strategies = ["mean", "median", "most_frequent", "constant"]
         if self.imputer_strategy not in ["mean", "median", "most_frequent", "constant"]:
             raise ValueError(f"Simple imputer strategy {self.imputer_strategy} not recognised, must be one of {', '.join(self.imputer_strategies)}")
 
-        self.imputer = SimpleImputer(**simple_imputer_kwargs)
+        self.imputer = SimpleImputer(strategy=self.imputer_strategy)
 
     def fit(self, X, y=None):
         self.imputer.fit(X[self.columns])

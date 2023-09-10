@@ -1,237 +1,262 @@
 from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
+
 import mlflow
 from imblearn.over_sampling import (ADASYN, SMOTE, BorderlineSMOTE,
                                     RandomOverSampler)
+from imblearn.pipeline import Pipeline as ImbalancedPipeline
 from imblearn.under_sampling import (ClusterCentroids, EditedNearestNeighbours,
                                      NearMiss, RandomUnderSampler, TomekLinks)
 
 
 class ResamplingPipeline(ABC):
+    """
+    A pipeline for handling imbalanced datasets by applying various resampling techniques.
 
-    # Over sampling
-    # Use random over sampling
-    USE_RANDOM_OVERSAMPLING: float = False
-    RANDOM_OVERSAMPLING_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 0.5,
-    }
+    This class provides methods to build a pipeline for resampling imbalanced datasets
+    using techniques such as oversampling and undersampling. It helps address class imbalance
+    issues in machine learning tasks.
 
-    # SMOTE parameters
-    USE_SMOTE: bool = False
-    SMOTE_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'k_neighbors': 5,
-        'sampling_strategy': 0.5,
-    }
-
-    # ADASYN parameters
-    USE_ADASYN: bool = False
-    ADASYN_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'n_neighbors': 5,
-        'sampling_strategy': 'auto',
-    }
-
-    # Borderline-SMOTE parameters
-    USE_BORDERLINE_SMOTE: bool = False
-    BORDERLINE_SMOTE_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 0.5,
-        'kind': 'borderline-1',
-        'k_neighbors': 5,
-    }
-
-    # Under sampling
-    # Random Undersampling parameters
-    USE_RANDOM_UNDERSAMPLING: bool = False
-    RANDOM_UNDERSAMPLING_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 0.5,
-    }
-
-    # Cluster Centroids parameters
-    USE_CLUSTER_CENTROIDS: bool = False
-    CLUSTER_CENTROIDS_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 'auto',
-    }
-
-    # Tomek Links parameters
-    USE_TOMEK_LINKS: bool = False
-    TOMEK_LINKS_PARAMETERS: Dict[str, Union[str, int, float]] = {}
-
-    # ENN parameters
-    USE_ENN: bool = False
-    ENN_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 'auto',
-    }
-
-    # NearMiss parameters
-    USE_NEAR_MISS: bool = False
-    NEAR_MISS_PARAMETERS: Dict[str, Union[str, int, float]] = {
-        'sampling_strategy': 'auto',
-        'version': 1,
-    }
+    Attributes:
+        imbalanced_steps (List[Tuple[str, Any]]): A list of tuples representing the steps
+            in the resampling pipeline.
+    """
 
     def __init__(self):
         super().__init__()
         self.imbalanced_steps: List[Tuple[str], Any] = []
 
-    def add_imbalanced_step(self, step_name: str, step_instance):
+    def random_oversampling(self, sampling_strategy: Union[float, str]) -> 'ResamplingPipeline':
         """
-        Add a step to the imbalance resampling pipeline.
+        Apply random oversampling to balance the class distribution.
+
+        Random oversampling involves randomly duplicating instances from the minority class
+        until it's balanced with the majority class. This technique can lead to overfitting
+        since it replicates existing data.
 
         Args:
-            step_name (str): Name of the pipeline step.
-            step_instance: Instance of the transformer to be added as a step.
+            sampling_strategy (Union[float, str]): The strategy for oversampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
 
         Returns:
-            FeaturePipelineBuilder: Updated builder instance.
+            ResamplingPipeline: Updated pipeline instance.
         """
-        self.imbalanced_steps.append((step_name, step_instance))
+        self.imbalanced_steps.append(
+            ("random_oversampling", RandomOverSampler(
+                sampling_strategy=sampling_strategy,
+            ))
+        )
+        if mlflow.active_run():
+            mlflow.set_tag("random_oversampling_strategy", sampling_strategy)
         return self
 
-    def _assemble_oversampling_pipeline(self):
+    def smote_oversampling(
+            self, sampling_strategy: Union[float, str],
+            k_neighbors: Optional[int] = 5
+    ) -> 'ResamplingPipeline':
         """
-        Method used for different oversampling strategies. All types are specific for binary classification tasks.
+        Apply SMOTE (Synthetic Minority Over-sampling Technique) oversampling.
 
-        Random Oversampling:
-            This involves randomly duplicating instances from the minority class until it's balanced with the majority class. While simple, it can lead to overfitting since it's essentially replicating existing data.
+        SMOTE creates synthetic samples by interpolating between existing samples.
+        It selects a sample from the minority class and finds its k nearest neighbors.
+        Then, it creates new samples along the line segments connecting the sample and its neighbors.
 
-        SMOTE (Synthetic Minority Over-sampling Technique):
-            SMOTE creates synthetic samples by interpolating between existing samples. It selects a sample from the minority class and finds its k nearest neighbors. Then, it creates new samples along the line segments connecting the sample and its neighbors.
+        Args:
+            sampling_strategy (Union[float, str]): The strategy for oversampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
+            k_neighbors (Optional[int]): The number of nearest neighbors to consider.
 
-        ADASYN (Adaptive Synthetic Sampling):
-            ADASYN focuses on generating more samples for the minority class instances that are difficult to classify. It generates samples proportionally to the density of the class distribution.
-
-        Borderline-SMOTE:
-            Similar to SMOTE, but it focuses on generating synthetic samples near the decision boundary, where the classes are difficult to separate.
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
         """
-
-        if sum([self.USE_RANDOM_OVERSAMPLING, self.USE_SMOTE, self.USE_ADASYN, self.USE_BORDERLINE_SMOTE]) > 1:
-            raise AssertionError("We recommend using only one oversampling technique.")
-
-        # Start by logging no oversampling and then overwrite with the correct technique if used
+        self.imbalanced_steps.append(
+            ("smote_oversampling", SMOTE(
+                sampling_strategy=sampling_strategy,
+                k_neighbors=k_neighbors,
+            ))
+        )
         if mlflow.active_run():
-            mlflow.set_tag("oversampling", None)
+            mlflow.set_tag("smote_oversampling_strategy", sampling_strategy)
+            mlflow.set_tag("smote_oversampling_kn", k_neighbors)
+        return self
 
-        # Build over sampling pipeline
-        if self.USE_RANDOM_OVERSAMPLING:
-            self.add_imbalanced_step(
-                "random_over_sampling", RandomOverSampler(
-                    sampling_strategy=self.RANDOM_OVERSAMPLING_PARAMETERS
-                )
-            )
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "oversampling", f"random_over_sampling - {self.RANDOM_OVERSAMPLING_PARAMETERS['sampling_strategy']}")
-
-        elif self.USE_SMOTE and self.SMOTE_PARAMETERS:
-            self.add_imbalanced_step(
-                "smote_over_sampling", SMOTE(
-                    **self.SMOTE_PARAMETERS
-                )
-            )
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "oversampling", f"smote_over_sampling - {self.SMOTE_PARAMETERS['sampling_strategy']}")
-
-        elif self.USE_ADASYN and self.ADASYN_PARAMETERS:
-            self.add_imbalanced_step(
-                "adasyn_over_sampling", ADASYN(
-                    **self.ADASYN_PARAMETERS
-                )
-            )
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "oversampling", f"adasyn_over_sampling - {self.ADASYN_PARAMETERS['sampling_strategy']}")
-
-        elif self.USE_BORDERLINE_SMOTE and self.BORDERLINE_SMOTE_PARAMETERS:
-            self.add_imbalanced_step(
-                "borderline_smote_over_sampling", BorderlineSMOTE(
-                    **self.BORDERLINE_SMOTE_PARAMETERS
-                )
-            )
-
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "oversampling", f"borderline_smote_over_sampling - {self.BORDERLINE_SMOTE_PARAMETERS['sampling_strategy']}")
-
-    def _assemble_undersampling_pipeline(self):
+    def adasyn_oversampling(
+            self,
+            sampling_strategy: Union[float, str],
+            k_neighbors: Optional[int] = 5
+    ) -> 'ResamplingPipeline':
         """
-        Method for different undersampling strategies. All types are specific for binary classification tasks.
+        Apply ADASYN (Adaptive Synthetic Sampling) oversampling.
 
-        Random Undersampling:
-            This involves randomly removing instances from the majority class until it's balanced with the minority class. Like random oversampling, it can result in loss of information.
+        ADASYN focuses on generating more samples for the minority class instances that are difficult to classify.
+        It generates samples proportionally to the density of the class distribution.
 
-        Cluster Centroids:
-            Cluster Centroids undersampling identifies clusters of majority class instances and then removes the majority class instances that are closest to the centroid of each cluster.
+        Args:
+            sampling_strategy (Union[float, str]): The strategy for oversampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
+            k_neighbors (Optional[int]): The number of nearest neighbors to consider.
 
-        Tomek Links:
-            A Tomek link is a pair of instances from different classes that are closest to each other. Removing the majority class instance from such pairs can help in improving class separation.
-
-        ENN (Edited Nearest Neighbors):
-            ENN removes instances whose class label differs from the majority class label of its k nearest neighbors.
-
-        NearMiss:
-            NearMiss selects examples from the majority class that are near the minority class instances based on some distance metric.
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
         """
-
-        if sum([
-            self.USE_RANDOM_UNDERSAMPLING, self.USE_CLUSTER_CENTROIDS,
-            self.USE_TOMEK_LINKS, self.USE_ENN, self.USE_NEAR_MISS
-        ]) > 1:
-            raise AssertionError("We recommend using only one undersampling technique.")
-
+        self.imbalanced_steps.append(
+            ("adasyn_oversampling", ADASYN(
+                sampling_strategy=sampling_strategy,
+                k_neighbors=k_neighbors,
+            ))
+        )
         if mlflow.active_run():
-            mlflow.set_tag("undersampling", None)
+            mlflow.set_tag("adasyn_oversampling", sampling_strategy)
+            mlflow.set_tag("adasyn_oversampling", k_neighbors)
+        return self
 
-        # Build under sampling pipeline
-        if self.USE_RANDOM_UNDERSAMPLING and self.RANDOM_UNDERSAMPLING_PARAMETERS:
-            self.add_imbalanced_step(
-                "random_undersampling", RandomUnderSampler(
-                    **self.RANDOM_UNDERSAMPLING_PARAMETERS
-                )
-            )
+    def borderline_smote_oversampling(
+            self,
+            sampling_strategy: Union[float, str],
+            k_neighbors: Optional[int] = 5,
+            kind: str = 'borderline-1',
+    ) -> 'ResamplingPipeline':
+        """
+        Apply Borderline-SMOTE oversampling.
 
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "undersampling", f"random_undersampling - {self.RANDOM_UNDERSAMPLING_PARAMETERS['sampling_strategy']}")
+        Similar to SMOTE, but it focuses on generating synthetic samples near the decision boundary,
+        where the classes are difficult to separate.
 
-        elif self.USE_CLUSTER_CENTROIDS and self.CLUSTER_CENTROIDS_PARAMETERS:
-            self.add_imbalanced_step(
-                "cluster_centroids", ClusterCentroids(
-                    **self.CLUSTER_CENTROIDS_PARAMETERS
-                )
-            )
+        Args:
+            sampling_strategy (Union[float, str]): The strategy for oversampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
+            k_neighbors (Optional[int]): The number of nearest neighbors to consider.
+            kind (str): The type of Borderline-SMOTE to use.
 
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "undersampling", f"cluster_centroids - {self.CLUSTER_CENTROIDS_PARAMETERS['sampling_strategy']}")
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
+        """
+        self.imbalanced_steps.append(
+            ("borderline_smote_oversampling", BorderlineSMOTE(
+                sampling_strategy=sampling_strategy,
+                k_neighbors=k_neighbors,
+                kind=kind,
+            ))
+        )
+        if mlflow.active_run():
+            mlflow.set_tag("borderline_smote_oversampling", sampling_strategy)
+            mlflow.set_tag("borderline_smote_oversampling", k_neighbors)
+        return self
 
-        elif self.USE_TOMEK_LINKS and self.TOMEK_LINKS_PARAMETERS:
-            self.add_imbalanced_step(
-                "tomek_links", TomekLinks(
-                    **self.TOMEK_LINKS_PARAMETERS
-                )
-            )
+    def random_undersampling(self, sampling_strategy: Union[float, str]) -> 'ResamplingPipeline':
+        """
+        Apply random undersampling to balance the class distribution.
 
-            if mlflow.active_run():
-                mlflow.set_tag("undersampling", "tomek_links")
+        Random undersampling involves randomly removing instances from the majority class
+        until it's balanced with the minority class. Like random oversampling, it can result in loss of information.
 
-        elif self.USE_ENN and self.ENN_PARAMETERS:
-            self.add_imbalanced_step(
-                "enn", EditedNearestNeighbours(
-                    **self.ENN_PARAMETERS
-                )
-            )
+        Args:
+            sampling_strategy (Union[float, str]): The strategy for undersampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
 
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "undersampling", f"enn - {self.ENN_PARAMETERS['sampling_strategy']}")
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
+        """
+        self.imbalanced_steps.append(
+            ("random_undersampling", RandomUnderSampler(
+                sampling_strategy=sampling_strategy,
+            ))
+        )
+        if mlflow.active_run():
+            mlflow.set_tag("random_oversampling_strategy", sampling_strategy)
+        return self
 
-        elif self.USE_NEAR_MISS and self.NEAR_MISS_PARAMETERS:
-            self.add_imbalanced_step(
-                "near_miss", NearMiss(
-                    **self.NEAR_MISS_PARAMETERS
-                )
-            )
+    def cluster_centoids_undersampling(self, sampling_strategy: Union[float, str]) -> 'ResamplingPipeline':
+        """
+        Apply Cluster Centroids undersampling.
 
-            if mlflow.active_run():
-                mlflow.set_tag(
-                    "undersampling", f"near_miss - {self.NEAR_MISS_PARAMETERS['sampling_strategy']}")
+        Cluster Centroids undersampling identifies clusters of majority class instances
+        and then removes the majority class instances that are closest to the centroid of each cluster.
+
+        Args:
+            sampling_strategy (Union[float, str]): The strategy for undersampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
+
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
+        """
+        self.imbalanced_steps.append(
+            ("cluster_centoids_undersampling", ClusterCentroids(
+                sampling_strategy=sampling_strategy,
+            ))
+        )
+        if mlflow.active_run():
+            mlflow.set_tag("cluster_centoids_undersampling", sampling_strategy)
+        return self
+
+    def tomek_links_undersampling(self) -> 'ResamplingPipeline':
+        """
+        Apply Tomek Links undersampling.
+
+        A Tomek link is a pair of instances from different classes that are closest to each other.
+        Removing the majority class instance from such pairs can help in improving class separation.
+
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
+        """
+        self.imbalanced_steps.append(
+            ("tomek_links_undersampling", TomekLinks())
+        )
+        return self
+
+    def enn_undersampling(self, sampling_strategy: Union[float, str]) -> 'ResamplingPipeline':
+        """
+        Apply Edited Nearest Neighbors (ENN) undersampling.
+
+        ENN removes instances whose class label differs from the majority class label
+        of its k nearest neighbors.
+
+        Args:
+            sampling_strategy (Union[float, str]): The strategy for undersampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
+
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
+        """
+        self.imbalanced_steps.append(
+            ("enn_undersampling", EditedNearestNeighbours(
+                sampling_strategy=sampling_strategy,
+            ))
+        )
+        if mlflow.active_run():
+            mlflow.set_tag("enn_undersampling", sampling_strategy)
+        return self
+
+    def near_miss_undersampling(self, sampling_strategy: Union[float, str], version: int = 1) -> 'ResamplingPipeline':
+        """
+        Apply NearMiss undersampling.
+
+        NearMiss selects examples from the majority class that are near the minority class instances
+        based on some distance metric.
+
+        Args:
+            sampling_strategy (Union[float, str]): The strategy for undersampling. Can be a float
+                specifying the desired ratio or 'auto' to balance classes.
+            version (int): The version of the NearMiss algorithm to use.
+
+        Returns:
+            ResamplingPipeline: Updated pipeline instance.
+        """
+        self.imbalanced_steps.append(
+            ("near_miss_undersampling", NearMiss(
+                sampling_strategy=sampling_strategy,
+                version=version,
+            ))
+        )
+        if mlflow.active_run():
+            mlflow.set_tag("near_miss_undersampling", sampling_strategy)
+        return self
+
+    def build_sampling_steps(self) -> ImbalancedPipeline:
+        """
+        Build the preconfigured Pipeline based on the added steps.
+
+        Returns:
+            Pipeline: Constructed Pipeline instance.
+        """
+        return ImbalancedPipeline(self.imbalanced_steps)
