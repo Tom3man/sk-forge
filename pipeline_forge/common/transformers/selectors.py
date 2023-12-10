@@ -54,12 +54,16 @@ class DecisionTreesFeatureSelector(BaseEstimator, TransformerMixin):
         """
         return {
             "dt": {
-                "regressor": DecisionTreeRegressor(random_state=self.random_seed),
-                "classifier": DecisionTreeClassifier(random_state=self.random_seed),
+                "regressor": DecisionTreeRegressor(
+                    random_state=self.random_seed),
+                "classifier": DecisionTreeClassifier(
+                    random_state=self.random_seed),
             },
             "rf": {
-                "regressor": RandomForestRegressor(random_state=self.random_seed),
-                "classifier": RandomForestClassifier(bootstrap=False, random_state=self.random_seed),
+                "regressor": RandomForestRegressor(
+                    random_state=self.random_seed),
+                "classifier": RandomForestClassifier(
+                    bootstrap=False, random_state=self.random_seed),
             },
         }
 
@@ -115,7 +119,8 @@ class DecisionTreesFeatureSelector(BaseEstimator, TransformerMixin):
         importance_df = importance_df.sort_values('importance', ascending=False)
         importance_df['cumulative_importance'] = importance_df.importance.cumsum()
 
-        selected_features_df = importance_df[importance_df.cumulative_importance < self.importance_th]
+        selected_features_df = importance_df[
+            importance_df.cumulative_importance < self.importance_th]
         return selected_features_df.features.values, selected_features_df.importance.values
 
     def fit(self, X: pd.DataFrame, y):

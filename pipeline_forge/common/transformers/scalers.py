@@ -14,7 +14,6 @@ class FeatureScalerTransformer(BaseEstimator, TransformerMixin):
 
     Args:
         scaler_type (str): The type of scaler to use.
-        month_col (str): The name of the column representing months. Defaults to "SUMMARY_MTH".
 
     Returns:
         pd.DataFrame: The scaled X DataFrame containing scaled values and the month column.
@@ -26,9 +25,7 @@ class FeatureScalerTransformer(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         scaler_type: str,
-        month_col: str = "SUMMARY_MTH",
     ):
-        self.month_col = month_col
         self.scaler_type = scaler_type
 
         self.scalers = {

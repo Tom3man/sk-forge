@@ -9,7 +9,7 @@ from imblearn.pipeline import Pipeline as ImbalancedPipeline
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 
-from .pipelines import FeatureEngineeringPipeline, ResamplingPipeline
+from .common.pipelines import FeatureEngineeringPipeline, ResamplingPipeline
 
 log = logging.getLogger(__name__)
 
